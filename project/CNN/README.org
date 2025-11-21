@@ -210,3 +210,84 @@ calculated before training starts, and will be written to the
     *   =per_class_metrics.png=: Bar charts showing Precision, Recall, and F1-Score for each of the 10 classes.
 
 * Understanding the outcome
+Let's use a simple, intuitive analogy: Imagine you've built an AI to
+look at EuroSAT images and identify if there is a *"River"* present.
+
+
+For any given image, there are four possible outcomes:
+-   *True Positive (TP):* The image has a river, and your AI correctly
+  says "River". (Correct Hit)
+
+-   *True Negative (TN):* The image has no river, and your AI
+  correctly says "No River". (Correct Rejection)
+
+-   *False Positive (FP):* The image has *no river* (e.g., it's a
+  highway), but your AI incorrectly says "River". (False Alarm)
+
+-   *False Negative (FN):* The image *has a river*, but your AI
+  incorrectly says "No River". (A Miss)
+
+
+ | prediction → | River | No River |
+ | image ↓      |       |          |
+ |---------------+-------+----------|
+ | River         | TP    | FP       |
+ | No River      | FN    | TN       |
+
+
+** Precission by class
+The core to the prediction is /how often is it right/ If the model
+recives a River and it correctly identifies this as a river.
+It is in other words how *trustworthy* the model is.
+
+$precision = \frac{TP}{TP + FP}$
+
+So in case we have a lot of /False positivies/ then the precision
+will go down.
+
+
+  + *High Precision* means your model has a low rate of "false
+    alarms". When it says it found a river, it's very likely that it's
+    actually a river. You can trust its positive predictions.
+
+  + *Low Precision* means your model creates a lot of "false
+    alarms". It's flagging many highways and fields as rivers.
+
+** Recall
+*Core Question:* Of all the actual rivers that exist in the dataset,
+how many did my model find? The sensitivity of the model.
+
+Recall True Positive Rate; measures how good your model is at finding
+all the positive cases.
+
+$Recall =\frac{TP}{TP + FN}$
+
+So when the model recieves a /False Negative/ that is an image that is
+a River, but it identifies it as not being a river, then the rating will go
+down.
+
+  + *High Recall* means your model is good at finding what it's
+    looking for. It has a low rate of "misses". If there's a river,
+    your model is very likely to spot it.
+
+  + *Low Recall* means your model is "missing" a lot of actual rivers.
+
+
+
+
+** F1-Score
+*Core Question:* How can I get a single number that balances both
+Precision and Recall?
+
+F1-Score try to harmonize the both the /recall/ and /prediction/
+It provides a single metric that summarizes model performance by
+combining both concerns.
+
+$f1_{score} = 2\times \frac{(Precision \times Recall)}{(Precision +Recall)}$
+
++ The F1-Score punishes extreme models. A model with 100% Precision
+ and 10% Recall will have a much lower F1-Score than a model with 80%
+ Precision and 80% Recall.
+
++ It is a good, balanced measure when you care about both false
+  positives and false negatives.
