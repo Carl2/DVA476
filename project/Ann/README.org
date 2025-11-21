@@ -1,0 +1,186 @@
+* Summary /coilSplit.py/
+
+The =coilSplit.py= script is a command-line utility for organizing the *COIL-100 image dataset* into three standard machine learning sets: *training, validation, and test*.
+
+Its method is simple and deterministic: it reads the filename of each
+image (e.g., =obj1__90.png=), extracts the rotation angle (90° in this
+case), and copies the file to the appropriate destination directory
+based on that angle.
+
+
+The splitting rules are as follows:
+-   *Train Set:* Images with rotation angles from *0° to 250°*.
+-   *Validation Set:* Images with rotation angles from *255° to 305°*.
+-   *Test Set:* Images with rotation angles from *310° to 355°*.
+
+** How to Use It
+
+You run the script from your terminal, providing paths for the source
+data and the three destination directories.
+
+
+*Command Arguments:*
+
+  + =-source <path>= :: (Required) The path to the directory
+    containing the original COIL-100 =.png= images.
+  + =-train <path>= :: (Required) The path to the output directory
+    where the training images will be copied.
+  + =-validation <path>= :: (Required) The path to the output
+    directory for validation images.
+  + =-test <path>= :: (Required) The path to the output directory for
+    test images.
+
+
+
+*Example Usage:*
+
+#+begin_src bash
+./coilSplit.py \
+  -source /path/to/original-coil100-images \
+  -train /path/to/coil-data/train \
+  -validation /path/to/coil-data/validation \
+  -test /path/to/coil-data/test
+#+end_src
+
+** Expected Outcome
+
+After running the command, two things will happen:
+
+1) *File System:* The =train=, =validation=, and =test= directories
+  will be created (if they don't exist) and populated with the
+  corresponding image files from the source directory.
+
+2) *Terminal Output:*
+   * A summary report will be printed (to stderr) showing how many
+    images were sorted into each set.
+
+   * A series of =export= commands will be printed (to stdout),
+    which you can use to easily set environment variables for the
+    new dataset paths in your shell. (NOT USED...)
+
+
+
+
+* Summary /ann.py/
+
+This project is a image classification system designed
+to work with the COIL-100 dataset. It provides two distinct modes of
+operation:
+
+  + *Artificial Neural Network (ANN):* A classic machine learning
+    approach that relies on manual feature extraction (e.g., HOG,
+    color histograms, statistical features) to create a feature
+    vector, which is then fed into a simple feed-forward neural
+    network.
+
+  + *Convolutional Neural Network (CNN):* A modern deep learning
+    approach that learns features directly from raw image pixels using
+    a multi-layered convolutional architecture.
+
+
+The software is architected using a functional programming paradigm,
+leveraging =pymonad= to create robust, error-handled data processing
+and training pipelines. It is highly modular, separating data
+handling, model definitions, training logic, and visualization into
+distinct components.
+
+
+* Project and Design
+
+The project is structured around a main entry point, =ann.py=, which
+dispatches tasks based on command-line arguments.
+
+
+  + *ANN Workflow:*
+    * Images are processed individually to extract a fixed-size feature vector.
+    * These vectors are batched, normalized, and used to train a =ClassifierNN= (=nn/classifier.py=).
+    * Results and training history are plotted using functions in =nn/train_plot.py=.
+
+  + *CNN Workflow:*
+    * Driven by a JSON configuration file (=-cnn <config.json>=).
+    * Uses a =CoilDataset= and PyTorch =DataLoader= to feed raw images to the =SimpleCNN= model (=cnn/coil_dataset.py=, =nn/cnn_classifier.py=).
+    * The entire pipeline (data loading, model creation, training, evaluation, plotting) is managed by functions in =cnn/cnn_main.py= and =common/utils/config_helper.py=.
+    * This workflow is more automated and configurable.
+
+  + *Core Principle (Monadic Pipelines):* The heavy use of
+    =pymonad.Maybe= ensures that any step in a data processing or
+    training pipeline that fails will gracefully terminate the chain
+    and return an error message, preventing crashes and making
+    debugging easier.
+
+* Software execution
+
+The software is executed from the command line via the =ann.py= script. You must provide one of the main operational modes (=-source=, =-test=, or =-img=).
+
+*Command-Line Arguments:*
+
+-   =-source <path>=: (TRAIN) Path to the directory containing training images. *Requires =-validation=*.
+-   =-test <path>=: (TEST) Path to the directory containing test images. *Requires =-load=*.
+-   =-img <path>=: (INSPECT) Path to a single image file for feature extraction and display.
+-   =-validation <path>=: Path to the directory containing validation images. Used with =-source=.
+-   =-load <path>=: Path to a saved model file (=.pt=). Used with =-test=.
+-   =-cnn <path>=: Path to a JSON configuration file. This argument switches the operation from ANN mode to CNN mode.
+
+* Execution Examples
+** Image inspection (ANN)
+ + *Inspect a Single Image (ANN Features):*
+  #+begin_src bash
+  ./ann.py -img /path/to/some_image.png
+  #+end_src
+
+** Ann Network
+ + *Train an ANN Model:*
+  #+begin_src bash
+  ./ann.py -source /path/to/train_images -validation /path/to/validation_images
+  #+end_src
+
+
+ + *Test a saved ANN Model:*
+  #+begin_src bash
+  ./ann.py -test /path/to/test_images -load Ann_model.pt
+  #+end_src
+** CNN Network
+ + *Train a CNN Model:*
+  #+begin_src bash
+  ./ann.py -source /path/to/train_images -validation /path/to/validation_images -cnn /path/to/config.json
+  #+end_src
+
+ + *Test a saved CNN Model:*
+  #+begin_src bash
+  ./ann.py -test /path/to/test_images -load /path/to/saved_cnn.pt -cnn /path/to/config.json
+  #+end_src
+
+
+* Outcomes
+Depending on the mode, you can expect the following outputs:
+
+*Console Output:*
+
+  + *During Training (ANN/CNN):*
+    * Progress updates showing epoch number, training loss, validation
+      loss, and validation accuracy.
+    * For CNNs, a progress bar will show batch-level progress
+      for each epoch.
+    * Early stopping (Only viable for ANN)
+      * A message indicating when early stopping is triggered.
+      * CNN does not have Early stopping, and will run util /epoch/ end.
+  + *During Testing (ANN/CNN):*
+    * A summary of test results, including overall accuracy, average
+      prediction confidence, and loss.
+    * For CNNs, a detailed confusion matrix is printed to the console.
+  + *For Single Image Inspection:*
+    * A summary of the extracted feature values and plotting will be shown.
+
+*Generated Files:*
+
+  + *Saved Models:*
+    * =Ann_model.pt=: The default saved model for the ANN.
+    * The CNN save path is defined in its JSON configuration file
+      (e.g., =models/best_model.pt=).
+  + *Plots & Visualizations:*
+    * *Training History Plot (=training_history.png=):* Generated after CNN training, showing loss and accuracy curves over epochs.
+    * *Confusion Matrix (=confusion_matrix.png=):* Generated after CNN testing, showing the model's per-class performance.
+    * *Per-Class Metrics (=per_class_metrics.png=):* A bar chart of precision, recall, and F1-score for each class, generated after CNN testing.
+    * *Live Matplotlib Windows:* Pop-up windows will display plots for ANN training/testing and single image feature inspection.
+  + *Metrics Log (CNN only):*
+    * A CSV file (e.g., =metrics/training_log.csv=, path defined in config) is created to log epoch-by-epoch performance metrics.

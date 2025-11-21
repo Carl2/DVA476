@@ -1,0 +1,55 @@
+#+TITLE: CNN Image Classification Project
+
+* Overview
+
+This project is a Convolutional Neural Network (CNN) for image classification, built using Python and the PyTorch library. The goal is to classify land use from satellite images using the EuroSAT dataset.
+
+* Project Structure & Components
+
+** 1. Configuration
+   - =config.json=: This file is the central configuration hub. It defines:
+     - The path to the dataset.
+     - The batch size for training.
+     - The specific image ranges for splitting the data into =train=, =validate=, and =test= sets for each of the 10 classes.
+   - =utils/config_helper.py=: A helper module that provides a safe and structured way to access the settings from =config.json=. It uses functional programming concepts (monads) for robust error handling.
+
+** 2. Data Loading
+   - =utils/load_data.py=: This module is responsible for reading the configuration and preparing the image data.
+     - It identifies and lists image file paths for each dataset split (train, validate, test) based on the numerical indices in their filenames, as specified in the config.
+     - The function =create_image_data_objs=, intended to create PyTorch =Dataset= objects, is currently a placeholder.
+
+** 3. Model Architecture
+   - =nn/network.py=: Defines the CNN model architecture using =torch.nn.Module=.
+     - The network consists of two convolutional blocks, each with a =Conv2d= layer, =BatchNorm2d=, ReLU activation, and =MaxPool2d=.
+     - It is followed by two fully connected (dense) layers.
+     - Dropout is used for regularization.
+     - The model is designed to accept 3-channel (RGB) images and output predictions for 10 classes, which matches the EuroSAT dataset.
+
+** 4. Main Execution
+   - =cnn_model.py=: The main entry point for the application.
+     - It parses command-line arguments to get the path to the =config.json= file.
+     - It orchestrates the loading of the configuration and the preparation of data paths.
+     - The actual training and evaluation logic has not yet been implemented in this file.
+
+* Current Status
+
+The project has a solid foundation with well-defined components for configuration, data loading, and model architecture. However, it is a work in progress.
+
+** Implemented:
+   - Configuration management.
+   - Data loading pipeline for identifying file paths.
+   - Complete CNN model definition.
+
+** To Be Implemented:
+   - Creation of PyTorch =Dataset= and =DataLoader= objects from the file paths.
+   - The main training loop (optimizer, loss function, forward/backward passes).
+   - The evaluation loop for the validation and test sets.
+
+* How to Run
+
+Currently, the program can be run to load the configuration and prepare data paths, but it will not perform any training.
+
+To run the script:
+#+BEGIN_SRC shell
+python cnn_model.py --config config.json
+#+END_SRC

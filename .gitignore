@@ -1,0 +1,61 @@
+*/ltximg/
+ltximg/
+*/__pycache__
+__pycache__
+euro
+EuroSAT.zip
+.aider*
+
+
+# Ignore all .org files...
+*.org
+
+# ...BUT make an exception for any file named README.org in any subdirectory.
+!**/README.org
+\**\*
+
+# --- Python / UV ---
+# Ignore the virtual environment directory
+.venv/
+
+# Ignore Python bytecode and cache
+__pycache__/
+*.pyc
+
+# Ignore distribution/build artifacts
+*.egg-info/
+dist/
+build/
+
+
+# --- Generated Project Outputs ---
+# Ignore all PyTorch saved model files
+*.pt
+
+# Ignore all generated images and plots
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pdf
+
+# Ignore all generated CSV files (e.g., for metrics)
+*.csv
+
+
+# --- Editor & OS Files ---
+# Ignore Emacs backup and auto-save files
+*~
+#*#
+
+# Ignore VSCode settings
+.vscode/
+
+# Ignore macOS system files
+.DS_Store
+
+
+# --- Project-Specific Data ---
+# Ignore any large datasets you might download
+euro/
+EuroSAT.zip

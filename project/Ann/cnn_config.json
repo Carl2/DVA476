@@ -1,0 +1,52 @@
+{
+    "logging": {
+        "metrics_csv": "metrics/training_log.csv",
+        "plot_every_n_epochs": 5,
+        "save_plots_to": "plots/"
+    },
+    "train_settings": {
+        "batch_size": 32,
+        "shuffle": true,
+        "num_workers": 4,
+        "pin_memory": true,
+        "dir": "/home/calle/git/personal/learn-torch/project/train"
+    },
+    "validation_settings": {
+        "batch_size": 32,
+        "shuffle": false,
+        "num_workers": 4,
+        "pin_memory": true,
+        "dir": "/home/calle/git/personal/learn-torch/project/validation/"
+    },
+    "test_settings": {
+        "batch_size": 32,
+        "shuffle": false,
+        "num_workers": 4,
+        "pin_memory": true,
+        "dir": "/home/calle/git/personal/learn-torch/project/test/"
+    },
+    "model_settings": {
+        "num_classes": 100,
+        "input_channels": 3,
+        "image_height": 128,
+        "image_width": 128,
+        "dropout_rate": 0.5,
+        "learning_rate": 0.001,
+        "num_epochs": 6,
+        "device": "cuda",
+        "save_path": "models/best_cnn_model.pt",
+        "optimizer_type": "Adam"
+    },
+    "settings": {
+        "mean": [
+            0.3045191764831543,
+            0.25733935832977295,
+            0.20551757514476776
+        ],
+        "std": [
+            0.26647716760635376,
+            0.21619130671024323,
+            0.19501197338104248
+        ]
+    }
+}

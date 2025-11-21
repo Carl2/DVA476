@@ -1,0 +1,172 @@
+{
+  "logging": {
+    "metrics_csv": "metrics/training_log.csv",
+    "plot_every_n_epochs": 5,
+    "save_plots_to": "plots/"
+  },
+  "train_settings": {
+    "batch_size": 32,
+    "shuffle": true,
+    "num_workers": 4,
+    "pin_memory": true
+  },
+  "validation_settings": {
+    "batch_size": 32,
+    "shuffle": false,
+    "num_workers": 4,
+    "pin_memory": true
+  },
+  "test_settings": {
+    "batch_size": 32,
+    "shuffle": false,
+    "num_workers": 4,
+    "pin_memory": true
+  },
+  "model_settings": {
+    "num_classes": 10,
+    "dropout_rate": 0.5,
+    "learning_rate": 0.001,
+    "num_epochs": 31,
+    "device": "cuda",
+    "save_path": "models/best_model.pt"
+  },
+  "settings": {
+    "path": "/home/calle/git/personal/learn-torch/project/CNN/euro/2750",
+    "mean": [
+      0.34422653913497925,
+      0.38012823462486267,
+      0.4075087904930115
+    ],
+    "std": [
+      0.20269012451171875,
+      0.13699954748153687,
+      0.11552631109952927
+    ]
+  },
+  "train": {
+    "AnnualCrop": {
+      "start": 1,
+      "end": 2100
+    },
+    "Forest": {
+      "start": 1,
+      "end": 2100
+    },
+    "HerbaceousVegetation": {
+      "start": 1,
+      "end": 2100
+    },
+    "Highway": {
+      "start": 1,
+      "end": 1750
+    },
+    "Industrial": {
+      "start": 1,
+      "end": 1750
+    },
+    "Pasture": {
+      "start": 1,
+      "end": 1400
+    },
+    "PermanentCrop": {
+      "start": 1,
+      "end": 1750
+    },
+    "Residential": {
+      "start": 1,
+      "end": 2100
+    },
+    "River": {
+      "start": 1,
+      "end": 1750
+    },
+    "SeaLake": {
+      "start": 1,
+      "end": 2100
+    }
+  },
+  "validate": {
+    "AnnualCrop": {
+      "start": 2101,
+      "end": 2551
+    },
+    "Forest": {
+      "start": 2101,
+      "end": 2551
+    },
+    "HerbaceousVegetation": {
+      "start": 2101,
+      "end": 2551
+    },
+    "Highway": {
+      "start": 1751,
+      "end": 2126
+    },
+    "Industrial": {
+      "start": 1751,
+      "end": 2126
+    },
+    "Pasture": {
+      "start": 1401,
+      "end": 1701
+    },
+    "PermanentCrop": {
+      "start": 1751,
+      "end": 2126
+    },
+    "Residential": {
+      "start": 2101,
+      "end": 2551
+    },
+    "River": {
+      "start": 1751,
+      "end": 2126
+    },
+    "SeaLake": {
+      "start": 2101,
+      "end": 2551
+    }
+  },
+  "test": {
+    "AnnualCrop": {
+      "start": 2552,
+      "end": 3000
+    },
+    "Forest": {
+      "start": 2552,
+      "end": 3000
+    },
+    "HerbaceousVegetation": {
+      "start": 2552,
+      "end": 3000
+    },
+    "Highway": {
+      "start": 2127,
+      "end": 2500
+    },
+    "Industrial": {
+      "start": 2127,
+      "end": 2500
+    },
+    "Pasture": {
+      "start": 1702,
+      "end": 2000
+    },
+    "PermanentCrop": {
+      "start": 2127,
+      "end": 2500
+    },
+    "Residential": {
+      "start": 2552,
+      "end": 3000
+    },
+    "River": {
+      "start": 2127,
+      "end": 2500
+    },
+    "SeaLake": {
+      "start": 2552,
+      "end": 3000
+    }
+  }
+}
