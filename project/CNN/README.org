@@ -1,55 +1,212 @@
 #+TITLE: CNN Image Classification Project
 
+
+
+
+
+
+
+
 * Overview
 
-This project is a Convolutional Neural Network (CNN) for image classification, built using Python and the PyTorch library. The goal is to classify land use from satellite images using the EuroSAT dataset.
+This project is a deep learning application for classifying satellite
+images from the /EuroSAT/ dataset using Convolution Neural Network. It
+is built using Python and the PyTorch framework. The software is
+sepperated into data handling, network architecture, and the main
+training/inference logic into distinct modules.
+
+The core of the project is a Convolutional Neural Network (CNN)
+designed for image classification. The entire workflow is controlled
+by a central JSON configuration file, making it flexible and easy to
+adapt for different experiments. The system supports two primary modes
+of operation:
+
+  + *Training:* Trains the CNN model from scratch on the EuroSAT
+    training dataset, validates it, and saves the best-performing
+    model.
+  + *Inference:* Loads a pre-trained model and evaluates its
+    performance on a test dataset, producing detailed metrics and
+    visualizations.
+
+
+A key feature is its ability to automatically calculate and cache
+normalization statistics (mean and standard deviation) for the
+dataset, which is a crucial step for model performance.
+
+
+
+
+
 
 * Project Structure & Components
 
-** 1. Configuration
-   - =config.json=: This file is the central configuration hub. It defines:
-     - The path to the dataset.
-     - The batch size for training.
-     - The specific image ranges for splitting the data into =train=, =validate=, and =test= sets for each of the 10 classes.
-   - =utils/config_helper.py=: A helper module that provides a safe and structured way to access the settings from =config.json=. It uses functional programming concepts (monads) for robust error handling.
+The codebase is modular, promoting a clean separation of concerns:
 
-** 2. Data Loading
-   - =utils/load_data.py=: This module is responsible for reading the configuration and preparing the image data.
-     - It identifies and lists image file paths for each dataset split (train, validate, test) based on the numerical indices in their filenames, as specified in the config.
-     - The function =create_image_data_objs=, intended to create PyTorch =Dataset= objects, is currently a placeholder.
++ *=cnn_model.py=*: This is the main entry point of the
+  application. It handles command-line argument parsing, loads the
+  configuration file, and orchestrates the entire training or
+  inference pipeline by calling functions from other modules.
 
-** 3. Model Architecture
-   - =nn/network.py=: Defines the CNN model architecture using =torch.nn.Module=.
-     - The network consists of two convolutional blocks, each with a =Conv2d= layer, =BatchNorm2d=, ReLU activation, and =MaxPool2d=.
-     - It is followed by two fully connected (dense) layers.
-     - Dropout is used for regularization.
-     - The model is designed to accept 3-channel (RGB) images and output predictions for 10 classes, which matches the EuroSAT dataset.
++ *=nn/network.py=*: Contains the core deep learning logic.
+  * *=CNN= class*: Defines the neural network architecture. It's a
+    standard CNN with two convolutional blocks (Conv2D, BatchNorm,
+    ReLU, MaxPool, Dropout) followed by two fully connected layers.
 
-** 4. Main Execution
-   - =cnn_model.py=: The main entry point for the application.
-     - It parses command-line arguments to get the path to the =config.json= file.
-     - It orchestrates the loading of the configuration and the preparation of data paths.
-     - The actual training and evaluation logic has not yet been implemented in this file.
+  * *Training & Validation*: Includes functions like
+    =train_one_epoch=, =validate_one_epoch=, and the main
+    =training_loop=. It handles the mechanics of feeding data to the
+    model, calculating loss, backpropagation, and updating weights.
+
+  * *Inference*: The =inference_loop= function is dedicated to
+    evaluating a trained model.
+
+  * *Model I/O*: =save_model= and =load_model= functions for saving
+    and loading model checkpoints.
+
++ *=nn/dataset.py=*: Manages data loading.
+  * *=EuroSatDataset= class*: A custom PyTorch =Dataset= that
+    efficiently loads EuroSAT images and their corresponding labels
+    from disk.
+
+  * *=create_data_loader=*: A factory function that wraps the
+    =EuroSatDataset= in a PyTorch =DataLoader=, which handles
+    batching, shuffling, and multi-threaded data loading.
+
++ *=common/utils/=*: A directory of shared utility modules.
+  * *=load_data.py=*: Contains helper functions to parse the
+    configuration file, identify image paths for different dataset
+    splits (train/validation/test), and generate appropriate data
+    augmentation and normalization transforms
+    (=torchvision.transforms=).
+
+  * *=stats.py=*: A powerful utility that can calculate the mean and
+    standard deviation of the entire training dataset. The
+    =ensure_normalization_stats= function cleverly checks if these
+    values are in the config file; if not, it calculates them and
+    saves them back to the json-file for future runs.
+
+  * *=plotter.py=*: Responsible for generating visualizations of the
+    results, including confusion matrices and plots of training
+    history (accuracy/loss vs. epochs).
+
+  * *=config_helper.py=*: A module with various helper functions to
+    safely read values from the nested configuration dictionary.
 
 * Current Status
 
-The project has a solid foundation with well-defined components for configuration, data loading, and model architecture. However, it is a work in progress.
+The project has a solid foundation with well-defined components for
+configuration, data loading, and model architecture. However, it is a
+work in progress, and could be done cleaner, but time is of an essence.
+
 
 ** Implemented:
    - Configuration management.
    - Data loading pipeline for identifying file paths.
    - Complete CNN model definition.
 
-** To Be Implemented:
-   - Creation of PyTorch =Dataset= and =DataLoader= objects from the file paths.
-   - The main training loop (optimizer, loss function, forward/backward passes).
-   - The evaluation loop for the validation and test sets.
+
 
 * How to Run
 
-Currently, the program can be run to load the configuration and prepare data paths, but it will not perform any training.
+Currently, the program can be run to load the configuration and
+prepare data paths, but it will not perform any training.
+
+Make sure to edit the configuration file with the proper paths to the
+  - path :: where to find the /EuroSAT/ image files.
+
+ if unsure of the /mean/ and /std/, remove them and the calculation
+ will be done and added to the configuration.
+
+   - train classes :: each class is represented in the name and has a
+     - start :: which index to of the file
+     - end :: where to end
+
+  for example "train":
+#+begin_src json
+  .....
+  "train" {
+      "AnnualCrop": {
+          "start": 1,
+          "end": 2100
+      }......
+  }
+#+end_src
+
+will start read the range of image file /AnnualCrop_1.jpg/ →
+/AnnualCrop_2100.jpg/ for training, and similarly for test and
+validation.
+
+
 
 To run the script:
 #+BEGIN_SRC shell
 python cnn_model.py --config config.json
 #+END_SRC
+
+This will train the model, the saved model is *model_settings*
+*save_path*. Together with hyperparameters that can be changed to
+find a better opimization.
+
+The metrics are saved in *logging* as a /csv/ file.
+If not cleaned the new values will be appended, this gives the graph.
+reversed lines going back, but at the same time you can compare
+different, training sessions.
+
+
+* Running
+
+| Argument       | Required | Description                                               |
+|----------------+----------+-----------------------------------------------------------|
+| =--config=     | *Yes*    | The path to your =config.json= file.                      |
+| =--test-model= | *No*     | The path to a pre-trained model file (=.pt=).             |
+|                |          | If this is provided, the script runs in *inference mode*. |
+
+** Training
+
+#+begin_src bash
+python cnn_model.py --config config.json
+#+end_src
+
+** Testing
+#+begin_src bash
+python cnn_model.py --config config.json --test-model models/best_model.pt
+#+end_src
+
+
+
+* Expected outcome and outputs.
+
+** During training
+If /mean/ and /std/ is not set in the configuration, it will be
+calculated before training starts, and will be written to the
+/config.json/ for caching.
+
++ *Console Output:* You will see progress bars for each
+ epoch, followed by a summary of the training and validation loss
+ and accuracy for that epoch.
+
++ *Saved Model:* The best model (based on validation accuracy) will be
+  saved to the path specified by =save_path= in your config (e.g.,
+  =models/best_eurosat_model.pt=).
+
+
++ *Metrics Log:* A CSV file will be created at the path specified by
+  =metrics_csv= (e.g., =logs/training_metrics.csv=). It will contain
+  the =epoch=, =train_loss=, =train_acc=, =val_loss=, and =val_acc=.
+
++ *History Plot:* After training completes, a plot named
+  =training_history.png= will be generated and displayed, showing the
+  accuracy and loss curves over epochs.
+
+
+* During Inference
+
+1.  *Console Output:* You will see a progress bar for the evaluation, followed by a final report containing:
+    *   Total test samples.
+    *   Final Loss and Accuracy on the test set.
+    *   A *Confusion Matrix* printed directly to the console.
+2.  *Plot Files:* Several plots will be generated and saved as image files:
+    *   =confusion_matrix.png=: A heatmap visualization of the confusion matrix with raw counts.
+    *   =per_class_metrics.png=: Bar charts showing Precision, Recall, and F1-Score for each of the 10 classes.
+
+* Understanding the outcome
