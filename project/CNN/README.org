@@ -236,7 +236,7 @@ For any given image, there are four possible outcomes:
 
 
 ** Precission by class
-The core to the prediction is /how often is it right/ If the model
+*Core question* to the prediction is /how often is it right/ If the model
 recives a River and it correctly identifies this as a river.
 It is in other words how *trustworthy* the model is.
 
