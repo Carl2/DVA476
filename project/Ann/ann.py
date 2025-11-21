@@ -157,7 +157,11 @@ Example:
 
 
             print(f"Running CNN mode with config: {args.cnn}")
-            cnn_main.train_cnn(cnn_config)
+            result = cnn_main.train_cnn(cnn_config)
+            if result.is_nothing():
+                print(f"Inference failed: {result.value}")
+            else:
+                print(f"Inference successful")
             return
 
 
@@ -183,7 +187,11 @@ Example:
             cnn_config['config_file'] = args.cnn.expanduser().resolve()
             cnn_config['load_model'] = args.load.expanduser().resolve()
             cnn_config['test_dir'] = args.test.expanduser().resolve()
-            cnn_main.run_inference(cnn_config)
+            result = cnn_main.run_inference(cnn_config)
+            if result.is_nothing():
+                print(f"Inference failed: {result.value}")
+            else:
+                print(f"Inference successful")
             return
 
         run_test(args.load, args.test)

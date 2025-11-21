@@ -176,7 +176,7 @@ def train_cnn(config: dict)->Maybe:
 
 
     csv_file  = logging_fn("metrics_csv").value
-    apa = Just(config) \
+    result = Just(config) \
         .bind(cnn_classifier.create_cnn_model(model_settings_fn)) \
         .bind(config_helper.create_optimizer(model_settings_fn)) \
         .bind(config_helper.create_loss_function) \
@@ -185,9 +185,8 @@ def train_cnn(config: dict)->Maybe:
                                           logging_fn)) \
         .bind(plotter.plot_training_history(csv_file))
 
-    # print(f"{apa.value}")
 
-    return Maybe(value="Not done yet", monoid=False)
+    return result
 
 def run_inference(config: dict):
     maybe_config = Just(config).bind(load_config)
@@ -229,7 +228,7 @@ def run_inference(config: dict):
     config["dataloader"] = maybe_test_dataloader.value
 
 
-    m_model = maybe_config \
+    m_config = maybe_config \
         .bind(coil_dataset.create_model(model_settings_fn)) \
         .bind(config_helper.load_model) \
         .bind(config_helper.create_optimizer(model_settings_fn)) \
@@ -238,8 +237,7 @@ def run_inference(config: dict):
         .bind(plotter.plot)
 
 
-    print(f"{m_model.value}")
-    return
+    return m_config
 
 
 def run_test_loop(settings_fn:callable) -> callable:
