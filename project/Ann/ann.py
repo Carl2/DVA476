@@ -43,13 +43,7 @@ def model_execution(model, train_tensor_dict: Maybe,
     train_data = train_tensor_dict.value['tensor']
     # train_data, norm_stats = train_label_feature.value  # Unpack stats
 
-    # # Apply SAME stats to validation
-    # validation_data = validation_label_feature.map(
-    #     lambda data: utils.to_tensor_and_normalize(
-    #         data,
-    #         stats_to_use=norm_stats
-    #     )
-    # )
+
 
     criterion = nn.CrossEntropyLoss()
     opti = optim.Adam(model.parameters(), lr=0.001)

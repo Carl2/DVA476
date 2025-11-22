@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pymonad.maybe import Maybe,Just
+from pymonad.maybe import Maybe, Just
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -17,9 +17,6 @@ class DatasetType(Enum):
     TEST = 3
     MODEL_SETTINGS = 4
     SETTINGS = 5
-
-
-
 
 
 def get_dataset_config(config: dict, dataset_type: DatasetType):
@@ -71,9 +68,7 @@ def convert_to_key(dataset_type: DatasetType):
     return Maybe(value=f"dataset type is not convertible ", monoid=False)
 
 
-
-
-def _get_from_config(*,dataset: DatasetType, config):
+def _get_from_config(*, dataset: DatasetType, config):
     if dataset == DatasetType.SETTINGS:
         return config['settings']
     if dataset == DatasetType.TRAIN:
@@ -82,9 +77,6 @@ def _get_from_config(*,dataset: DatasetType, config):
         return config['validate']
     if dataset == DatasetType.TEST:
         return config['test']
-
-
-
 
 
 def get_settings(config: dict, config_type: DatasetType) -> callable:
@@ -104,14 +96,14 @@ def get_classes(config: dict, config_type: DatasetType)->list:
 
 
 def get_start_end(config_specific: dict):
-    return (config_specific['start'],config_specific['end'])
+    return (config_specific['start'], config_specific['end'])
 
 ###############################################################################
 #                                 Log metrics                                 #
 ###############################################################################
 def log_metrics(logging_fn:callable) -> callable:
-    m_csv_file  = logging_fn("metrics_csv")
-    m_every_n  = logging_fn("plot_every_n_epochs")
+    m_csv_file = logging_fn("metrics_csv")
+    m_every_n = logging_fn("plot_every_n_epochs")
     m_path = logging_fn("save_plots_to")
 
     if (m_csv_file.is_nothing() or
@@ -121,10 +113,9 @@ def log_metrics(logging_fn:callable) -> callable:
         return lambda config: f"No metrics saved"
 
     csv_path = Path(m_csv_file.value).expanduser().resolve()
-    every_n = m_every_n.value
-    plot_path = Path(m_path.value).expanduser().resolve()
+    # every_n = m_every_n.value
+    # plot_path = Path(m_path.value).expanduser().resolve()
     print(f"🐜 metrics are saved on {csv_path}")
-
 
     def do_log_metrics(configs: dict) -> Maybe:
         try:
@@ -137,7 +128,6 @@ def log_metrics(logging_fn:callable) -> callable:
 
             with open(csv_path, 'a', newline='') as f:
                 writer = csv.writer(f)
-
                 # Write header if new file
                 if not file_exists:
                     writer.writerow(['epoch', 'train_loss', 'train_acc',
@@ -176,7 +166,8 @@ def create_optimizer(model_settings_fn:callable) -> callable:
         maybe_learning_rate = model_settings_fn("learning_rate")
 
         if maybe_learning_rate.is_nothing():
-            return Maybe(value=f"Could not find learning in model settings", monoid=False)
+            return Maybe(value="Could not find learning in model settings",
+                         monoid=False)
         learning_rate = maybe_learning_rate.value
 
         optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -296,7 +287,7 @@ def validate_one_epoch(configs: dict, save_fn: callable) -> Maybe:
         val_loss = running_loss / len(val_loader)
         val_acc = 100 * correct / total
 
-        print(f'Validation Results:')
+        print('Validation Results:')
         print(f'  Loss: {val_loss:.4f}')
         print(f'  Accuracy: {val_acc:.2f}%\n')
 

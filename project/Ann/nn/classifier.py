@@ -21,7 +21,7 @@ class ClassifierNN(nn.Module):
     def forward(self, x):
         x = self.relu1(self.fc1(x))
         x = self.relu2(self.fc2(x))
-        x = self.fc3(x)                      # No activation; use CrossEntropyLoss
+        x = self.fc3(x)                      # No activation
         return x
 
 

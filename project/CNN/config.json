@@ -26,7 +26,7 @@
     "num_classes": 10,
     "dropout_rate": 0.5,
     "learning_rate": 0.001,
-    "num_epochs": 31,
+    "num_epochs": 51,
     "device": "cuda",
     "save_path": "models/best_model.pt"
   },

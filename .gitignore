@@ -39,8 +39,6 @@ build/
 *.gif
 *.pdf
 
-# Ignore all generated CSV files (e.g., for metrics)
-*.csv
 
 
 # --- Editor & OS Files ---

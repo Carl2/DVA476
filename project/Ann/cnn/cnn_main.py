@@ -236,12 +236,15 @@ def run_inference(config: dict):
         .bind(run_test_loop(model_settings_fn)) \
         .bind(plotter.plot)
 
-
     return m_config
 
 
 def run_test_loop(settings_fn:callable) -> callable:
-    num_classes = settings_fn("num_classes").value
+    num_classes = settings_fn("num_classes")
+
+    if num_classes.is_nothing():
+        return Maybe(value="num_classes not found in configuration", monoid=False)
+    num_classes = num_classes.value
 
     def do_run_test_loop(config:dict) -> Maybe:
         config["num_classes"] = num_classes

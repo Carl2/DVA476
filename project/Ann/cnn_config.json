@@ -32,7 +32,7 @@
         "image_width": 128,
         "dropout_rate": 0.5,
         "learning_rate": 0.001,
-        "num_epochs": 6,
+        "num_epochs": 51,
         "device": "cuda",
         "save_path": "models/best_cnn_model.pt",
         "optimizer_type": "Adam"
