@@ -12,6 +12,7 @@ EuroSAT.zip
 
 # ...BUT make an exception for any file named README.org in any subdirectory.
 !**/README.org
+!**/Project_Report.org
 \**\*
 
 # --- Python / UV ---

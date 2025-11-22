@@ -1,0 +1,1300 @@
+#+STARTUP: overview
+#+OPTIONS: toc:nil
+#+LATEX_CLASS: article
+#+LATEX_HEADER: \usepackage[backend=biber,style=ieee]{biblatex}
+#+LATEX_HEADER: \addbibresource{references.bib}
+#+BIBLIOGRAPHY: references.bib
+
+* Abstract
+This paper investigates and compares two neural network
+architectures—an Artificial Neural Network (ANN) with manual feature
+engineering and a Convolutional Neural Network (CNN)—for the task of
+image classification on the COIL-100 dataset. The ANN approach relies
+on a handcrafted feature map derived from statistical measures, color
+histograms, Canny edge detection, and Histogram of Oriented Gradients
+(HOG). In contrast, the CNN is designed to learn hierarchical features
+automatically through its convolutional layers. The central hypothesis
+was that the CNN would achieve superior classification accuracy and
+generalization at the cost of increased training time. Experimental
+results confirmed this hypothesis: the CNN achieved a test accuracy of
+98.8%, significantly outperforming the ANN's 89%. While the ANN
+trained substantially faster, the CNN's ability to automatically learn
+relevant spatial features proved decisive for achieving higher
+predictive performance in this image recognition task.
+
+* Introduction and problem formulation
+Image classification is the algorithm of differentiate objects in
+images into different classes. In this paper we will go through how we
+used ANN(Artificial Neural Network) network and CNN(Convolution Neural
+Network) network to identify 100 different objects.  Each of the
+Neural Networks have different approaches. ANN needs human
+intervention to extract feature from images before learning, while a
+CNN will try figuring out the image features by convolution.
+We will then compare these two approaches for a final summary.
+
+The hypothesis is that using CNN would take longer to train, but would
+gain better generalization and better prediction. Though it comes with
+the expense of loosing control of what is the features that would make
+the object.
+
+The task in this paper is to use the /[[https://www.cs.columbia.edu/CAVE/software/softlib/coil-100.php][coil-100]]/ dataset consisting of
+7200 images (128x128x3) of 100 objects and classify the 100 objects
+using Neural Network. Each of the 100 objects has 72 images taken from different
+angles (5°/image). To be able to do this the dataset needs to be split into
+/training/, /validation/ and /test/ dataset. The proportions of the
+datasets are as follows:
+
+| Dataset name | Amount |    Camera | Img/object |
+|              | Images | angles(°) |            |
+|--------------+--------+-----------+------------|
+| Training     |   5100 |     0-250 |         51 |
+| Validation   |   1000 |   255-305 |         11 |
+| Test         |   1100 |   310-355 |         10 |
+
+These datasets are used to
+create an ANN and CNN network for image classification/recognition, and
+compare the performance and accuracy and to recognize the pros and
+cons for each of these neural networks.
+
+** Training dataset
+The /training dataset/ is used to train the models;
+each of the image feature is fed through the network and the loss(error),
+will be back-propagated to adjust the weights of the network to find a
+optimal solution for classification. This is also the largest portion
+of the dataset.
+
+** Validation dataset
+The /validation dataset/ is used for validating the model.  These are
+images that has not been revealed to the model.
+During the training the model will use the validation dataset to
+measure the accuracy of the model without updating the parameters.
+This will be used to measure how good the model is to generalize the
+feature and thus predicting the classification.
+
+** Test dataset
+The /test dataset/ is used when the model is completed, and test to
+classify the images. Its the final test to reveal the models accuracy.
+None of the test dataset has been revealed to the model during training.
+
+
+
+* ANN
+:PROPERTIES:
+:ID:       781f2e1d-a069-4a95-9436-523321e2baca
+:END:
+An artificial Neural Network(ANN) is a Neural Network that in
+comparison to CNN, has manually created feature maps. In this case we
+are using images as input to the ANN, which means its necessary to
+extract features from the image. The problem is to find suitable
+/features/.
+
+** Image feature explained
+Lets first discuss what a feature is; An image consists of
+pixels, so for example a 128x128x3 (Width x Height x Channels) image
+contains $128 \times 128 \times 3=49152$ values, consider the 128x128
+as rows and columns and Channels(3) as 3 values (Red,Green,Blue) in each cell.
+
+#+CAPTION: 3x3x3 Image example
+#+begin_export latex
+\begin{bmatrix}
+(22,34,5) & (4,0,255) & (3,200,10) \\
+(40,56,250) & (5,2,40) & (64,67,10) \\
+(70,87,39) & (84,255,0) & (90,23,87)
+\end{bmatrix}
+#+end_export
+
+
+An /image feature/ is a pattern, structure or characteristics in an
+image that can be detected and used for recognition.
+For the NN to classify images we need to find a distinct
+pattern(feature) that always occur with similar images for similar objects.
+For example a carrot, has a distinct pattern , it might look different
+from different view or perspective and one carrot may not always have
+the same shape or even color.
+But we as humans can detect that this is a carrot and not a tomato
+quite easy. This is the feature of the carrot; it is the pattern of the carrot.
+In other words we don't want to feed the NN with a carrot image, we
+want to train it with the feature of the carrot, an more generalized
+view of what a carrot is.
+
+Lets make a small example of what a feature is.  If we convert the
+carrot image to a gray scale image ($128 \times 128 \times 1=16384$
+pixels) we can calculate the mean,median, std deviation,
+variance,range ,min and max and quite a few other statistical
+measurements, this by it self does not make a complete picture of the carrot, but
+it might be a pattern together with other features for the NN to
+learn from. Obviously we need more features (More on that in the [[id:5eaea8f1-1760-43db-9d46-3e51bacf1fa1][ANN
+implementation]]).
+
+
+** Feature map implementation
+The first task was to find a /reasonable/ number of features.
+Reasonable in this context means; It needs to be enough for the model
+to generalize, but having to many features could lead to:
+
+ - Amount training data :: Model requires exponentially more training data.
+ - Overfitting :: Model memorizes noise rather than learning
+   generalizable pattern
+ - Computational cost :: Increased training time and memory requirements.
+ - Redundancy :: correlated features provide little additional
+   information.
+
+Having to few features on the other hand, could lead to:
+ - underfitting :: Cannot differentiate types due to lack of data.
+ - Information loss :: Important patterns might be overlooked or
+   intentionally disregarded.
+
+The optimal approach can only be discovered through trial and error;
+unfortunately, there is no formula—only common sense and experience.
+
+The feature map created for this paper is using 8261 values for one
+image. $\frac{128 \times 128 \times 3}{8261} \approx 5.95$ ,thus basically
+compressing the image 6 times in space. Though bare in mind that the
+compression is obviously not able to reconstruct the image from the
+image features.
+
+** Images features
+As discussed earlier; the decision in which image feature to use is
+trail and error process. The feature implemented in this project was
+chosen based on a process to start with a minimum and slowly increase
+add new features and measure the accuracy, it's also based on what
+other has experienced. The feature list chosen might not be the
+optimal, further investigation and testing would be needed.  Some of
+the feature are based on gray scale image, therefor the image is
+transformed to gray scale. The list below should not be consider
+optimal but merely one that is working sufficiently for the purpose of
+classifying the images.
+
+*** Transform to grayscale
+The transformation from RGB to grayscale is based on a formula from
+cite:opencv
+The conversion uses a weighted sum of the RGB channels:
+$Y = 0.299 \times R + 0.587 \times G + 0.114 \times B$
+
+This formula accounts for human perception , where the eye is most
+sensitive to green light, followed by red and blue.
+
+The formula calulates each pixel using the above formula and creates a
+new image with just one grayscale channel. This reduces the image size
+by substantially(3:1). On the other hand, it also removes features of the
+image, particularly color-based information that might be useful for
+certain types of analysis. However, for many computer vision tasks such
+as edge detection, and pattern matching, grayscale
+images provide sufficient information while significantly reducing
+computational complexity and processing time.
+
+*** Statistical feature
+:PROPERTIES:
+:ID:       b8a18571-b9fa-4080-93bd-1c5549917489
+:END:
+The statistical data is based in the grayscale image, this to greatly
+reduce the computational resouces, it also reduces the final feature
+map size. The statistical information is based on the complete image,
+flattening out the image , and calulate:
+
+ - mean :: Average pixel intensity - indicates overall brightness
+ - median :: Robust to outliers, useful when lighting varies
+ - std deviation :: How much pixels vary from average
+ - range :: Total intensity span (max-min)
+ - min :: Minimal intensity
+ - max :: Maximal intensity
+ - Percentiles :: Robust spread measures
+   - 25 %
+   - 75 %
+ - iqr :: Spread of middle 50% of data (75% - 25%)
+ - cv :: Coefficient of Variation std/mean ratio
+
+This transforms thousands of pixes into a small number of numbers.
+Statistics don't change if the image shifts.
+This of course has the limitation that it loses spatial information,
+which might be better for texture/pattern classification.
+
+
+*** Color histogram (and grayscale)
+:PROPERTIES:
+:ID:       4edeb352-78e6-41ac-a161-02db44c2a702
+:END:
+Color histogram is based on 4 channels (Red,Green,Blue and grayscale).
+That is; The RGB-image is split up into 3 image, where each
+image is represented by the color (RGB) and finally we also use the
+grayscale image to further extend the feature map, the grayscale adds
+luminance information independent of color. The histogram
+divides the image into bins representing the intensities, in a
+complete histogram and RGB color scheme, there would be 256
+bins. Though these can be combined for example 30 bins where each bin
+will be a number of accumulated intensities (this to reduce the
+feature map size, as for this project 30 bins were used).
+This will provide information on color distribution, regardless where
+the color appears. It captures the palette of the image, and is
+resistant to small geometric changes. Together with the statistical
+information this give a representation of the image characteristics.
+For example this would catch if the image rotates, since the color
+intensities would be similar. But as with
+statistical data, this loses the spatial information.
+This will provide another $4 \times 30 = 120$  to the feature map.
+
+*** Edge Detection
+:PROPERTIES:
+:ID:       99f82b75-dcaf-45d8-af9d-8cbd039da3e3
+:END:
+Edge detection is the procedure to detect edges in an image.  Edge
+detection will create a new image of the same size as the original
+image, tought the intensities are binary where edges are represented
+with intensities. Edges can be found using grayscale image, in this
+project we used the /Canny/ edge detection algorithm from
+cite:opencv. The Canny edge detection algorithm provides spatial
+information about object boundaries and structures in the
+image. When used as a feature map for the ANN, it serves several
+purposes:
+ - Contours :: Edge detection highlights the objects contour and shape.
+ - Noise reduction :: Canny algorithm includes a Gaussian smoothing ,
+   reducing sensitivity to noise.
+ - Geometric structure :: The edge detection output image provides
+   geometric structure.
+
+The /Canny/ algorithm works in multiple-stages, with noise reduction ,
+finding intensity gradient (using sobel kernel),  Non-maximum supression.
+
+The argument to the /Canny/ algorithm is the image, and also
+thresholds (min,max) which determines if its an edge or not.  This
+can/should be calibrated to , for this paper the values were set to
+min=20,max=200.
+
+
+*** HOG descriptor
+:PROPERTIES:
+:ID:       eec49143-1722-4b02-a210-1160ea13f226
+:END:
+Histogram of oriented Gradients; captures the structure and shape of
+objects by analyzing the distribution of edge direction.
+This works by computing the gradient magnitude and directions of each
+pixel then grouping pixels into cells and creating a histogram of
+gradient orientation. Instead of looking at each pixel, it breaks down
+the pictures into cells (typically 8x8), for each cell, it calulates
+which directions the edges are pointing (horizontal,vertical or
+diagonal) and creates a histogram showing how many edges point in each
+direction. These histograms from neighboring cells are then grouped
+together into larger blocks and normalized to make the detection more
+robust against changes in lighting.
+
+common use: people detection, Object recognision.
+
+argument to the /HOGdescriptor/ in this paper:
+| Name         | Value   |                                          |
+|--------------+---------+------------------------------------------|
+| cell_size    | (8,8)   |                                          |
+| block_size   | (16,16) | Grouping cells                           |
+| block_stride | (8,8)   | Striding across image                    |
+| nbins        | 9       | bins categorising cells edge oriantation |
+
+The number used are are taken somewhat arbitrary or subjective, and could/should be
+further investigated to have better performance. This ends up with
+array of 8100 values to add to the feature map.
+
+
+*** Complete feature map
+The different features are now concatenated together as one flat
+array.
+
+\begin{equation}
+
+size_{map} = \text{statistical} + \text{color histogram} + \text{edge detection} + \text{HOG descriptor} = 8261
+\end{equation}
+
+The /size_map/ is also the inputs to the model, but before that can be
+done, the data has to be normalized.
+
+*** Normalization
+:PROPERTIES:
+:ID:       b7872bb2-b785-4b71-bfde-4da8c3766f6a
+:END:
+Neural networks perform best when input features are on a similar, small scale and centered around zero. To achieve this, we use *standardization*, which rescales the data to have a mean of 0 and a standard deviation of 1.
+
+The process of normalization takes each feature map and calculates the
+mean and standard deviation of the columns.
+
+Consider this 5, made up feature maps:
+#+NAME: features
+| Feature |      val1 |      val2 |      val3 |      val4 |      val5 |
+|---------+-----------+-----------+-----------+-----------+-----------|
+|       1 |         4 |         6 |         1 |         7 |       4.5 |
+|       2 |         2 |        10 |        12 |        88 |      28.0 |
+|       3 |         1 |        12 |        31 |         9 |      13.2 |
+|       4 |         5 |        15 |         4 |        10 |       8.5 |
+|       5 |         2 |         2 |        15 |        11 |       7.5 |
+|---------+-----------+-----------+-----------+-----------+-----------|
+|    mean |         3 |     10.75 |        12 |      28.5 |     13.55 |
+| std dev | 1.8257419 | 3.7749172 | 13.490738 | 39.686270 | 10.268560 |
+#+TBLFM: @>>$2..@>>$6=vmean(@2..@5)::@>$2..@>$6=vsdev(@2..@5)
+
+Using the formula:
+#+NAME: eq:normalization
+\begin{equation}
+norm = \frac{(x - \mu)}{\sigma}
+\end{equation}
+
+
+where /x/ is the value .
+
+| Feature |        val1 |        val2 |        val3 |        val4 |         val5 |
+|---------+-------------+-------------+-------------+-------------+--------------|
+|       1 |  0.54772255 |  -1.2583057 | -0.81537422 | -0.54174907 |  -0.88133098 |
+|       2 | -0.54772255 | -0.19867985 |          0. |   1.4992591 |    1.4072080 |
+|       3 |  -1.0954451 |  0.33113309 |   1.4083737 | -0.49135381 | -0.034084623 |
+|       4 |   1.0954451 |   1.1258525 | -0.59299943 | -0.46615618 |  -0.49179242 |
+|       5 | -0.54772255 |  -2.3179316 |  0.22237479 | -0.44095855 |  -0.58917706 |
+|---------+-------------+-------------+-------------+-------------+--------------|
+#+TBLFM: $2=(remote(features,@@#$2) - remote(features,@7$2)) / remote(features,@8$2)::$3=(remote(features,@@#$3) - remote(features,@7$3)) / remote(features,@8$3)::$4=(remote(features,@@#$4) - remote(features,@7$4)) / remote(features,@8$4)::$5=(remote(features,@@#$5) - remote(features,@7$5)) / remote(features,@8$5)::$6=(remote(features,@@#$6) - remote(features,@7$6)) / remote(features,@8$6)
+
+This also gives each feature value a common ground so that no feature
+value will have a large weight due to its larger value.  It is however
+very important that the same /mean/ and /std/ that was produced during
+training, is also used when running test/validation or inference.
+(As the author of this report can attest)
+
+* Convolutional Neural Networks, CNN
+:PROPERTIES:
+:ID:       fa092019-23e9-4057-98ea-ab2533473389
+:END:
+Convolution Neural Network (CNN), on the other hand takes a a
+grid-like data and convolutes on it. The eassiest way is to consider
+images; An image is a grid-like data structure with width,height and
+channel(s). Where the channels represents the colors, for example RGB
+is represented by 3 different channels (Red,Green and Blue).
+The strength of the CNN is its ability to find patterns, this can be
+any sort of data, even 1d sequence as for example text, or time series
+like sensor reading. Though in this report we will stick to the image,
+which is using a [[id:8de35b6a-18bd-48e9-8439-0e5d2badd51e][2d convolution]], more on that in the next section.
+
+As with /ANN's/ the need for standardization is necessary, and the
+same concept applies.
+
+A cnn are a specialized type of *deep learning model* designed to
+automatically learn features. Instead of creating a feature map by
+hand; a CNN uses convolutes and stride through the image pixels with a
+kernel.  The kernel is a 2d table for example 3x3, these
+kernels resembles a lot of the image-processing smoothing
+and sharpening kernels.  The difference is that each time the CNN
+back-propagates it updates the filter weights, and a new feature map
+will convey.  This will achive high accuracy without human in the
+loop.  Another benefit is that the model can be trained on many different
+images. With ANN there was a need to find good features to extract
+from the image to find abstractions. With a CNN the kernel/filter gets updated during
+training to "fit" the image features.  During training the CNN uses a
+transform function to transform the image in size to fit the input, but
+also to flip,rotate and add color variation to the image. This to make
+sure that it capture both local and gloabl dependencies in image data.
+
+
+** Convolution layer
+:PROPERTIES:
+:ID:       8de35b6a-18bd-48e9-8439-0e5d2badd51e
+:END:
+Convolution is a layer in neural network, as described before it
+contains a filter/kernel wich is a two dimensional table that is
+applied to the input image. By sliding the kernel over the input, and
+performing element-wise multiplication and summation to extrat
+features. To calulate the size of the output of a convolution:
+
+#+NAME: convOutputSize
+\begin{equation}
+out_{sz} = \frac{Input_{sz} - Kernel_{sz}+2\times Padding}{stride}+1
+\end{equation}
+
+
+
+If for example we have a 128x128 image with a convolutional layer,
+with the following arguments
+ - input_{sz} :: 128x128
+ - Kernel_{sz} :: 3x3
+ - Padding :: 1
+ - stride :: 1
+
+  $\frac{128 - 3+2\times 1}{2}+1 = \frac{127}{1} +1 = 128$
+
+  In other words; the output size would be the same as the input.
+  There is how ever another argument to the convolution, and that is
+   how many filter should be applied, that is the same as the ouput
+   channels. So for example if we apply 64 different filters to the
+   convolution layer with the above arguments we will retain a
+   64x128x128. That means that the next layer needs to have 64 neurons
+   that takes a feature of type 128x128.
+
+** Batch2d layer
+:PROPERTIES:
+:ID:       a365fab6-21d3-4022-b905-3374baf7c7a6
+:END:
+As described in the [[id:b7872bb2-b785-4b71-bfde-4da8c3766f6a][Normalization]] the /Batch2d/ basically does the
+same thing , it calulates the /mean/ and /standard deviation/ of the
+feature map, and normalize it using the formula described [[eq:normalization][normalization]]
+
+Benefits with this is that
+Batch Normalization stabilizes training by normalizing layer
+inputs. This reduces internal covariate shift, allowing for higher
+learning rates and faster convergence by preventing drastic shifts in
+activation distributions during training.
+It adds a slight noise to the network's calculations due to that it
+uses batches.
+
+
+
+** MaxPooling layer
+:PROPERTIES:
+:ID:       8f4aa3ba-e641-429d-9f2f-a7b5f09aa769
+:END:
+The /MaxPooling/ is used for downsampling a feature map.
+This is done through a kernel. The kernel is placed on top
+of the feature map, and zooming in. The zoom then highlights
+the values of the image. MaxPooling then takes the highest value of
+the values and creates a new feature map. The kernel is then slided
+across the original feature map, effectivly reducing it.
+
+Let's say you have a 4x4 single-channel feature map, and you apply Max Pooling with =kernel_size=2= and =stride=2=.
+
+*Input Feature Map (4x4):*
+#+begin_src
+[[1, 2, 7, 8],
+ [3, 4, 3, 2],
+ [9, 1, 5, 6],
+ [0, 5, 2, 1]]
+#+end_src
+
+*Output Feature Map (2x2):*
+#+begin_src
+[[4, 8],
+ [9, 6]]
+#+end_src
+
+This gives the formula
+#+NAME: MaxPooling
+\begin{equation}
+\text{Output Size} = \left\lfloor \frac{\text{Input Size} - \text{Kernel Size}}{\text{Stride}} \right\rfloor + 1
+\end{equation}
+
+In the case of a /128x128/ with kernel size /2x2/ and stride 2:
+$\left\lfloor \frac{128 - 2}{2} \right\rfloor + 1=64$
+
+Max Pooling effectively reduces the feature map dimensions. While a
+convolutional layer with multiple filters increases the depth (number
+of channels) of the feature map, Max Pooling acts in reverse by
+decreasing its spatial dimensions (width and height). It uses a kernel
+to select the maximum value within receptive fields, thus downsampling
+the feature map, typically by half when using a 2x2 kernel and stride
+of 2, as demonstrated above. This reduction in size helps in making
+the model more robust to minor translations and reduces computational
+load.
+
+
+
+
+** ReLU Layer
+:PROPERTIES:
+:ID:       dad690e6-bdd1-4380-91ad-ee45a6524036
+:END:
+The /ReLU/ is quite simple in its construction, though very important.
+Its an non-linear activation function.
+
+The equation:
+#+NAME: RelU
+\begin{equation}
+ \text{output} = max(0,x)
+\end{equation}
+
+It effectively removes all the negative numbers, which is vital for
+introducing non-linearity and combating issues like vanishing
+gradients, enabling the NN to learn complex patterns.
+
+** Linear activation
+:PROPERTIES:
+:ID:       d294fa63-d47e-4f7e-b1cd-7b386b637c63
+:END:
+/Linear activation/ is a simple activation function that uses the
+linear equation
+#+NAME: linear-equ
+\begin{equation}
+y = kx + m
+\end{equation}
+ where:
+  - y :: is the output of the neuron.
+  - x :: Input to the neuron.
+  - k :: weight (slope).
+  - m :: bias
+
+The most common use of the linear activation is in the output layer of
+a neural network when performing a /regression/ task. In regression ,
+the goal is to predict a continous value, for example temperature,
+money or any other commodity. Since it is a linear layer, it want be
+able to learn non-linear patterns, its therefor seldom used in hidden
+layers, where for example ReLU would be more appropriate.
+
+** Dropout
+:PROPERTIES:
+:ID:       38c9f650-8b57-495c-8722-3a917b92d534
+:END:
+The /Dropout layer/ randomly setting the output of certain neurons to
+0 , the argument s aprecentage of neurons in a layer , this is done
+during training, no dropout is done during inference.
+
+The reason for doing this is preventing overfitting, this is the main
+reason for dropout, it forces the network to learn more robust
+features that are not reliant on the precense of specific neurons and
+thus improving the model's generalization ability.
+
+
+** Softmax
+Is an activation function used in the output layer of a neural network
+for /multi-class classification problems/. Its primary role is to
+convert a vector of arbitrary real-valued scores into a probability
+distribution. In essence , it takes a list of numbers and transforms
+them into a list of probablities.
+
+* Implementation
+The structure of the code is diveded into 2 different project, but in
+one workspace ([[https://github.com/Carl2/DVA476][Github repository]]).
+ - The [[id:b0054955-13d7-4e71-a064-be94c61e3eae][COIL-100]] implementation
+ - The [[id:5904e82f-3a61-4f15-836e-ac9f4cfa289e][EuroSAT]] implementation
+
+
+* Coil-100
+:PROPERTIES:
+:ID:       b0054955-13d7-4e71-a064-be94c61e3eae
+:END:
+The first project is called [[https://github.com/Carl2/DVA476/tree/main/project/Ann][Ann]] and is implementing both a traditional ANN, with feature maps
+described in [[id:781f2e1d-a069-4a95-9436-523321e2baca][ANN]] section, and a [[id:fa092019-23e9-4057-98ea-ab2533473389][CNN]]. This project focuses on
+classifying 100 object in /COIL-100/. How to run the software
+is best described in [[https://github.com/Carl2/DVA476/blob/main/project/Ann/README.org][README]] file in the repository.
+Both models are in the same python [[https://github.com/Carl2/DVA476/blob/main/project/Ann/ann.py][file]] but run with different
+arguments depending on training or test, and if using ANN or CNN.
+
+** Coil Split
+:PROPERTIES:
+:ID:       b0a26750-b5fb-48e7-8b1c-a343f91c132e
+:END:
+The coil dataset are images of 100 different objects, each object has
+72 images, each image is taken with a 5° turn.
+That gives 7200 images. To be able to use these images for
+training,validation and testing the model it is necssary to divide up
+the images. This is done through [[https://github.com/Carl2/DVA476/blob/main/project/Ann/coilSplit.py][coilSplit.py]] which copies each of the
+100 objects into 3 different directory.
+ - Train
+ - Validation
+ - Test
+
+The splitting rules are as follows:
+ + *Train Set:* Images with rotation angles from *0° to 250°* (51 images/object)).
+ + *Validation Set:* Images with rotation angles from *255° to 305°*
+   (11 images/object).
+ + *Test Set:* Images with rotation angles from *310° to 355°* (10 images/object).
+
+ Reasoning for the split; The training needs most data, this is where the actual
+ work is done, so a split where 70% of the image would be used for
+ training and 13-15% for each validation and testing seemed
+ reasonable.
+
+
+
+** Ann
+As described in earlier section (section [[id:781f2e1d-a069-4a95-9436-523321e2baca][ANN]]), the was implemented
+with
+ - Statistical feature :: see [[id:b8a18571-b9fa-4080-93bd-1c5549917489][Statistical feature]]
+ - Color Histogram :: see [[id:4edeb352-78e6-41ac-a161-02db44c2a702][Color histogram (and grayscale)]]
+ - Edge Detection :: see [[id:99f82b75-dcaf-45d8-af9d-8cbd039da3e3][Edge Detection]]
+ - Hog descriptor ::  see [[id:eec49143-1722-4b02-a210-1160ea13f226][HOG descriptor]]
+
+ This are then aggregated into one /feature map/ which is fed to
+ the /Neural network/.
+
+*** Neural Network (ANN)
+This classifying network only has 3 layers.
+ - Input layer (Layer 1) :: A [[id:d294fa63-d47e-4f7e-b1cd-7b386b637c63][Linear activation]] input of the created feature map
+   is added (8261 values). The ouput is now 512 values.
+   Each of the 512 neurons receives all 8261 input values. For each
+   of these 512 neurons, it performs a separate linear calculation
+   where it multiplies each of the 8261 input values by a
+   weight (which is unique to that specific output neuron), sums all
+   these products together, and then adds its own unique bias term.
+   - ReLU :: a [[id:dad690e6-bdd1-4380-91ad-ee45a6524036][ReLU Layer]] for activation effectivly remove any
+     negative values and make the model more non-linear.
+ - Hidden Layer :: It also uses [[id:d294fa63-d47e-4f7e-b1cd-7b386b637c63][Linear activation]] as input, but this
+   time with 512 inputs and 256 outputs
+   - ReLU :: A [[id:dad690e6-bdd1-4380-91ad-ee45a6524036][ReLU Layer]] for non-linearity and removing negative values.
+ - Output Layer :: Finally a [[id:d294fa63-d47e-4f7e-b1cd-7b386b637c63][Linear activation]] layer with 256 neurons,
+   and the amount of classes that should be classified , in this case
+   100 different objects.
+
+ The last layer should have used a Softmax , though this was not considered
+ while building the network, which meant that the softmax was later
+ introduced as standalone function during validation and inference.
+
+
+*** Label gathering
+To be able to train, validate and test the model its important to have
+the image labels together with the image. Since the image files are
+constructed as =obj<n>__<deg>= where
+ - n :: is the object name
+ - deg :: is the image photo angle.
+
+ By using regular expression on the file name , it was possible to
+ retrieve the right [[https://github.com/Carl2/DVA476/blob/a92d03c0f79f4b18f5764fc02df6c6c26bb2230b/project/common/common/utils/coil_utils.py#L16][label]].
+
+
+
+*** Optimizer
+:PROPERTIES:
+:ID:       ba49840e-2a18-43f6-bce5-52b3c1926011
+:END:
+The /optimizer/ is an algorithm or function used to adjust the
+attributes of the neural network, such as the weights and biases, to
+minimize the loss function.
+During the training process, the network computes a "loss" (or error)
+based on how far its predictions differs from the true labels. The
+optimizer then describes how the network's parameters should be changed
+in response to this loss, guiding the model towards an optimal
+solution where the loss is minimized and accuracy is maximized.
+
+During training we used /[[https://docs.pytorch.org/docs/stable/generated/torch.optim.Adam.html][Adam]]/ optimizer.
+
+
+*** Loss Function
+:PROPERTIES:
+:ID:       1c69a2d3-0e35-47c9-a950-442d8daaaff1
+:END:
+The purpose of the loss function is to find the discrepancy between
+the predicted outcome and the labels, it is used to quantify the
+error. The loss function also guides the optimizer, providing a clear
+objective for the optimizer.
+
+For this neural network we used /[[https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html][CrossEntropyLoss]]/, which is a
+standard and highly effective choice for multi-class classifcation.
+
+
+*** Early stop
+:PROPERTIES:
+:ID:       14cea805-5cd1-4284-83b1-514b07f51657
+:END:
+One problem that tend to happen in this /ANN/, was that it tend to
+become overfitted. Some effort was done to find the right amount of
+epochs, to have a optimal training and validation and at the same time
+not becoming overfitted. Eventually though, a early stopping was
+introduced. The early stopping class is a common strategy for stopping
+when the improvments does not increase over for some epochs.
+it uses:
+ - patience :: It defines how many consecutive epochs the model can go without an improvement
+ - min\_delta :: A threshold that defines what constitutes an "improvement"
+ - counter :: Incremented when no improvement is observed
+ - best_loss :: Stores the lowest validation loss observed so far
+ - best\_model\_state :: A copy of the model's parameters
+
+As long as the model keeps on progressing and improve a checkpoint is
+saved to the early stop class, this to be able to retrive the best
+model when early stopper stops training the model.
+
+At this point early stopping default values are:
+ - patience :: 10
+ - min_delta :: 0.001
+
+ These seemed like reasonable values, without getting overfitted.
+ One could experiment with these values more, and probably have a
+ better optimal solution, but these seemed to work.
+
+*** Training and Validation
+Training is the process of updating the weights and biases in the
+network. This involves feeding the model with training data, evaluating
+its performance, and then using that feedback to refine its learning.
+It is an iterative process. The input (all images in batches) is fed through the network and the
+loss function quantifies the error, and the new update values are set
+in the weights and biases using the optimizer. When this has been done the validation
+parts starts. The validation is running the updated model with images
+and labels which has not been seen/trained by the network.
+This give a more robust view of how well the network performs, and can
+be a important parameter to see if the model is overfitted.
+When the validation is done the process start over again, util running
+out of epochs or that the early stopping stops the iteration.
+
+Here are some hyper parameters
+ - Epochs :: 50 (though using [[id:14cea805-5cd1-4284-83b1-514b07f51657][early stopping]], it stops around 27-30)
+ - Learning rate :: using Adam 0.001
+ - Batch size :: 32
+
+** CNN (in ANN project)
+This is the second part of the project to use the same /COIL-100/
+image dataset but to use a [[id:fa092019-23e9-4057-98ea-ab2533473389][CNN]] network instead.  Instead of having
+human in the loop to convey the feature map, a cnn effectivly creates
+filters based on convolution.  Learning from the previous misstake to
+have the hyperparameters in code, a better approach was taken to use a
+json configuration file instead. This also had the benefit of being
+easier to test different approaches/parameter without having change
+the code. See  [[https://github.com/Carl2/DVA476/blob/main/project/Ann/cnn_config.json][configuration]] for more details.
+
+Since the calulation of /mean/ and /std/ for
+
+
+*** Neural Network (CNN)
+The CNN network was built up from these layers.
+ - Layer Input :: Input layer with (128x128)
+   This layer produces 64x64x64 output feature map
+   - Convolution layer :: Act as input layer for the images.
+     - Input channels :: 3 (RGB)
+     - Out channels :: 64
+     - kernel size :: 3
+     - padding  :: 1
+   - BatchNorm2d :: Uses a [[id:a365fab6-21d3-4022-b905-3374baf7c7a6][Batch2d layer]] for nomarlization
+   - MaxPool2d :: Uses a [[id:8f4aa3ba-e641-429d-9f2f-a7b5f09aa769][MaxPooling layer]] for size reduction from
+     128x128 → 64x64.
+ - Layer 2 :: input to the layer is 64x64x64
+   - Convolution layer :: the feature map from layer 1 is convoluted
+     with, this layer will produce 128x64x64 output
+     - input channels :: 64
+     - output channels ::  128
+     - kernel size :: 3
+     - padding  :: 1
+   - BatchNorm2d :: Uses a [[id:a365fab6-21d3-4022-b905-3374baf7c7a6][Batch2d layer]] for nomarlization (with 128
+     neurons)
+   - MaxPool2d :: Uses a [[id:8f4aa3ba-e641-429d-9f2f-a7b5f09aa769][MaxPooling layer]] for size reduction from
+     64x64 → 32x32.
+ - Layer 3 :: input to the layer is 256x32x32, output is 256x16x16
+   - Convolution layer :: the feature map from layer 1 is convoluted
+     with, this layer will produce 256x32x32
+     - input channels :: 1
+     - output channels ::  128
+     - kernel size :: 3
+     - padding  :: 1
+   - BatchNorm2d :: Uses a [[id:a365fab6-21d3-4022-b905-3374baf7c7a6][Batch2d layer]] for nomarlization (with 256
+     neurons)
+   - MaxPool2d :: Uses a [[id:8f4aa3ba-e641-429d-9f2f-a7b5f09aa769][MaxPooling layer]] for size reduction from
+     32x32 → 16x16
+ - Layer 4 :: Fully connected, by flattening out the feature map from
+   layer 3
+   - Linear activation ::   [[id:d294fa63-d47e-4f7e-b1cd-7b386b637c63][Linear activation]] we get a fully connected.
+   - Dropout :: An [[id:38c9f650-8b57-495c-8722-3a917b92d534][Dropout]] layer , for more generalization.
+   - Linear activation :: Another [[id:d294fa63-d47e-4f7e-b1cd-7b386b637c63][Linear activation]] for regression of
+     the 100 classes.
+
+
+*** Optimizer
+The optimizer used is the /Adam/ optimizer , the same as in /ANN/ read
+[[id:ba49840e-2a18-43f6-bce5-52b3c1926011][Optimizer]] for more information on optimizer.
+The learing rate is set to 0.001 but it can easily be changed in the
+json configuation.
+
+
+*** Loss function
+Again the same loss function is set to the same as /ANN/ see [[id:1c69a2d3-0e35-47c9-a950-442d8daaaff1][Loss
+Function]] for more information.
+
+
+
+*** Early stopping.
+The CNN did not include a early stop, one reason was that it tended to
+be running for a long time. Instead it relied upon manual setting the
+epoch in configuration.
+
+
+*** Logging and metrics.
+The CNN included metrics logging, and storage for this.
+Instead of just showin plots , it also stored the values in a =csv=
+file which can be configured in the json configuration file.
+These includes
+ - Epoch :: Epoch number
+ - Training loss :: Quatified value of loss in training between
+   prediction and actual data for a certain epoch.
+ - Training accuracy :: Percentage value of the correcly classified
+   samples. If all images where correctly classified it would be 100%
+ - Validation loss :: Quatified value of loss in validation
+ - validation accuracy :: Percentage value of the correcly classified
+   samples.
+
+** Evaluation
+Both these models have there strength and weaknesses, and to be fair a
+lot of hyper parameters can be changed on both models to get more
+optimized values but this means a lot of testing.  Both models used
+saving when the performance got better.  That means it always saved
+the best model even if there were more epochs left to run. This so
+that it would at least have the best model available.
+
+***  ANN
+The pros in the ANN is that it trains alot faster (with my setup),
+ther resources and time to train this model is just a fraction of the
+time of the CNN. In essence you have more control of the input feature
+map so which mean it could be better optimized based on some specfic
+image feature. This also means that the model could be smaller, since
+an image 128x128x3 = 49152, while the feature map consists of 8261
+values, which mean its realtivly small compared to an complete image.
+And obviously this is reflected on how the model is built up, how many
+layers and if they are fully connected and so forth.
+
+Tests suggest that for the constructed architectures, the ANN model
+resulted in a significantly smaller total number of trainable
+parameters compared to the CNN. This is primarily attributed to the
+manual feature engineering process in the ANN, which compresses the
+image information into a relatively compact 8261-dimensional feature
+vector.
+
+One caveat is that you have to transform you image into a feature map
+before applying it to a model, which means that more resources would
+be used during inference.
+
+How about performance? The time it took to train the model
+for $time \approx 14sec$ this of course depends on the hardware and
+resouces available. But this to compare with several minutes using
+CNN, it quite substantial.
+Lets now consider the accuracy of the training and validation.
+We can see that the loss function have a steap slope at the first 10
+epochs, while quite fast smoth, and around 30 epochs the early stopper
+breaks the training. The validation accuracy manage to get up to 78%
+
+[file:ANN/Traingin_graphs.png]
+
+
+ - Processed Train: 5100 files
+ - Validation: 1100 files
+ - Stopping early at epoch 47
+| Epoch [10/50] | Train Loss: 0.3903 | Val Loss: 1.2333 | Val Acc: 68.73% | avg confidence: 64.99% |
+| Epoch [20/50] | Train Loss: 0.0296 | Val Loss: 1.0105 | Val Acc: 73.36% | avg confidence: 81.58% |
+| Epoch [30/50] | Train Loss: 0.0050 | Val Loss: 0.9432 | Val Acc: 77.36% | avg confidence: 86.58% |
+| Epoch [40/50] | Train Loss: 0.0014 | Val Loss: 0.9288 | Val Acc: 78.36% | avg confidence: 88.32% |
+
+ The average confidence is the confidence of the model that the right
+ prediction is made. So far this looks pretty good.
+
+ Lets now run it in test , where none of the images have been
+ presented to the model before.
+
+
+| Class        | precision | recall | f1-score | support |
+|--------------+-----------+--------+----------+---------|
+|              |           |        |          |         |
+|            0 |      1.00 |   0.90 |     0.95 |      10 |
+|            1 |      1.00 |   1.00 |     1.00 |      10 |
+|            2 |      0.83 |   1.00 |     0.91 |      10 |
+|            3 |      1.00 |   1.00 |     1.00 |      10 |
+|            4 |      1.00 |   1.00 |     1.00 |      10 |
+|            5 |      1.00 |   0.10 |     0.18 |      10 |
+|            6 |      1.00 |   1.00 |     1.00 |      10 |
+|            7 |      0.88 |   0.70 |     0.78 |      10 |
+|            8 |      1.00 |   1.00 |     1.00 |      10 |
+|            9 |      1.00 |   1.00 |     1.00 |      10 |
+|           10 |      1.00 |   1.00 |     1.00 |      10 |
+|           11 |      1.00 |   1.00 |     1.00 |      10 |
+|           12 |      1.00 |   1.00 |     1.00 |      10 |
+|           13 |      1.00 |   1.00 |     1.00 |      10 |
+|           14 |      0.14 |   0.10 |     0.12 |      10 |
+|           15 |      0.59 |   1.00 |     0.74 |      10 |
+|           16 |      0.82 |   0.90 |     0.86 |      10 |
+|           17 |      1.00 |   1.00 |     1.00 |      10 |
+|           18 |      1.00 |   1.00 |     1.00 |      10 |
+|           19 |      1.00 |   1.00 |     1.00 |      10 |
+|           20 |      1.00 |   0.20 |     0.33 |      10 |
+|           21 |      1.00 |   1.00 |     1.00 |      10 |
+|           22 |      0.75 |   0.90 |     0.82 |      10 |
+|           23 |      1.00 |   1.00 |     1.00 |      10 |
+|           24 |      1.00 |   1.00 |     1.00 |      10 |
+|           25 |      1.00 |   1.00 |     1.00 |      10 |
+|           26 |      0.70 |   0.70 |     0.70 |      10 |
+|           27 |      1.00 |   0.80 |     0.89 |      10 |
+|           28 |      1.00 |   0.90 |     0.95 |      10 |
+|           29 |      1.00 |   1.00 |     1.00 |      10 |
+|           30 |      1.00 |   1.00 |     1.00 |      10 |
+|           31 |      0.91 |   1.00 |     0.95 |      10 |
+|           32 |      1.00 |   1.00 |     1.00 |      10 |
+|           33 |      1.00 |   1.00 |     1.00 |      10 |
+|           34 |      1.00 |   1.00 |     1.00 |      10 |
+|           35 |      1.00 |   1.00 |     1.00 |      10 |
+|           36 |      1.00 |   1.00 |     1.00 |      10 |
+|           37 |      1.00 |   0.90 |     0.95 |      10 |
+|           38 |      1.00 |   1.00 |     1.00 |      10 |
+|           39 |      1.00 |   0.30 |     0.46 |      10 |
+|           40 |      0.91 |   1.00 |     0.95 |      10 |
+|           41 |      0.91 |   1.00 |     0.95 |      10 |
+|           42 |      0.33 |   0.20 |     0.25 |      10 |
+|           43 |      1.00 |   0.20 |     0.33 |      10 |
+|           44 |      1.00 |   0.30 |     0.46 |      10 |
+|           45 |      1.00 |   0.90 |     0.95 |      10 |
+|           46 |      1.00 |   1.00 |     1.00 |      10 |
+|           47 |      1.00 |   1.00 |     1.00 |      10 |
+|           48 |      1.00 |   1.00 |     1.00 |      10 |
+|           49 |      1.00 |   1.00 |     1.00 |      10 |
+|           50 |      1.00 |   1.00 |     1.00 |      10 |
+|           51 |      0.89 |   0.80 |     0.84 |      10 |
+|           52 |      1.00 |   1.00 |     1.00 |      10 |
+|           53 |      1.00 |   1.00 |     1.00 |      10 |
+|           54 |      1.00 |   1.00 |     1.00 |      10 |
+|           55 |      1.00 |   1.00 |     1.00 |      10 |
+|           56 |      1.00 |   1.00 |     1.00 |      10 |
+|           57 |      1.00 |   1.00 |     1.00 |      10 |
+|           58 |      0.43 |   0.60 |     0.50 |      10 |
+|           59 |      1.00 |   0.20 |     0.33 |      10 |
+|           60 |      1.00 |   1.00 |     1.00 |      10 |
+|           61 |      1.00 |   0.50 |     0.67 |      10 |
+|           62 |      0.77 |   1.00 |     0.87 |      10 |
+|           63 |      1.00 |   1.00 |     1.00 |      10 |
+|           64 |      1.00 |   1.00 |     1.00 |      10 |
+|           65 |      1.00 |   1.00 |     1.00 |      10 |
+|           66 |      0.37 |   1.00 |     0.54 |      10 |
+|           67 |      0.86 |   0.60 |     0.71 |      10 |
+|           68 |      0.47 |   0.80 |     0.59 |      10 |
+|           69 |      1.00 |   1.00 |     1.00 |      10 |
+|           70 |      1.00 |   1.00 |     1.00 |      10 |
+|           71 |      1.00 |   1.00 |     1.00 |      10 |
+|           72 |      1.00 |   1.00 |     1.00 |      10 |
+|           73 |      1.00 |   1.00 |     1.00 |      10 |
+|           74 |      0.83 |   1.00 |     0.91 |      10 |
+|           75 |      0.67 |   1.00 |     0.80 |      10 |
+|           76 |      1.00 |   0.90 |     0.95 |      10 |
+|           77 |      1.00 |   1.00 |     1.00 |      10 |
+|           78 |      1.00 |   1.00 |     1.00 |      10 |
+|           79 |      1.00 |   1.00 |     1.00 |      10 |
+|           80 |      1.00 |   1.00 |     1.00 |      10 |
+|           81 |      1.00 |   0.70 |     0.82 |      10 |
+|           82 |      1.00 |   1.00 |     1.00 |      10 |
+|           83 |      0.24 |   0.50 |     0.32 |      10 |
+|           84 |      1.00 |   1.00 |     1.00 |      10 |
+|           85 |      1.00 |   1.00 |     1.00 |      10 |
+|           86 |      1.00 |   1.00 |     1.00 |      10 |
+|           87 |      1.00 |   1.00 |     1.00 |      10 |
+|           88 |      1.00 |   1.00 |     1.00 |      10 |
+|           89 |      1.00 |   1.00 |     1.00 |      10 |
+|           90 |      0.83 |   1.00 |     0.91 |      10 |
+|           91 |      1.00 |   1.00 |     1.00 |      10 |
+|           92 |      0.67 |   1.00 |     0.80 |      10 |
+|           93 |      1.00 |   1.00 |     1.00 |      10 |
+|           94 |      1.00 |   1.00 |     1.00 |      10 |
+|           95 |      0.56 |   1.00 |     0.71 |      10 |
+|           96 |      1.00 |   1.00 |     1.00 |      10 |
+|           97 |      1.00 |   0.60 |     0.75 |      10 |
+|           98 |      1.00 |   1.00 |     1.00 |      10 |
+|           99 |      0.80 |   0.80 |     0.80 |      10 |
+|--------------+-----------+--------+----------+---------|
+|     accuracy |         0 |      0 |     0.89 |    1000 |
+|    macro avg |      0.92 |   0.89 |     0.88 |    1000 |
+| weighted avg |      0.92 |   0.89 |     0.88 |    1000 |
+
+  - Precision :: For each class, precision measures how many of the items
+/identified as that class/ actually belong to that class.
+  - Recall :: For each class, recall measures how many of the /actual
+    items of that class/ were correctly identified by the model.
+  - F1-score :: The harmonic mean of precision and recall. It's a single metric that provides a balance between detecting all relevant instances (recall) and not incorrectly identifying irrelevant instances (precision). A high F1-score indicates good performance on both.
+  - support :: How many images there are from different classes.
+
+In essence; on average, the model correctly classified 89% of the test
+images.
+
+Though if we take a closer look into some of the classes we noticed that for
+example; some classes have  really low score of recall or precision.
+| Class | precision | recall | f1-score | support |
+|-------+-----------+--------+----------+---------|
+|     5 |      1.00 |   0.10 |     0.18 |      10 |
+|    14 |      0.14 |   0.10 |     0.12 |      10 |
+|    20 |      1.00 |   0.20 |     0.33 |      10 |
+|    42 |      0.33 |   0.20 |     0.25 |      10 |
+|    43 |      1.00 |   0.20 |     0.33 |      10 |
+|    58 |      0.43 |   0.60 |     0.50 |      10 |
+|    83 |      0.24 |   0.50 |     0.32 |      10 |
+
+This reveals that there are possibly more features are needed to
+overcome these low performing classes.
+And to be fair, another training might give another score and
+precision, but in the same rage, and the low performing classes are
+still visible on other trainings.
+
+*** CNN
+There are many pros with a CNN, one main argument is that the same
+network can be used to train many different image classifications, in
+comparison to the ANN which is more specialized on certain images
+using hand made feature extraction. An example could be that training
+a CNN on Medical images (MR) or using them in map images one could use
+the same model (though training on different images). In other words
+its more versatile in its use.
+
+It was already discussed that the size of the CNN in this case was
+substantially larger, though this could be a reflection on how this
+project has been setup. On the other hand the CNN does not need to do
+pre-work when running inference, the image is the input.
+
+One reflection is that that there are more already built
+infrastructure for the CNN, for example the creation.
+The creation was done using Dataset → DataLoader → Inject to model.
+This probably has to do with the popularity of the CNN models.
+
+How did it perform?
+Since it did not have a early stopper , I tried with various different
+epochs, and I could not see a clear overfitted graph as i did with the
+ANN. If this is due to that the CNN (with [[id:38c9f650-8b57-495c-8722-3a917b92d534][Dropout]]) is more resilient
+against overfitting or if I did not run long enough remains unclear.
+Though the loss/precision graph tended to flat out around 30 epochs,
+but a epoch using the CNN took substantially much longer compared to
+the ANN.
+
+In comparison the time to train was $time \approx 6min$
+
+Though since the logging was added i could compare different training
+runs and compare loss and precision. One thing to notice is that even
+with the same data and the same number of epochs, the training can
+produce two completely different graphs. However, they tend to
+converge towards the same values after some amount of epochs. The
+reason is probably that datasets are shuffled and randomized during
+training.
+
+Now, to the more important question, how did it perform with the
+classification?
+
+If we look at the the best output from 3 different
+training sessions
+| Total Epochs | Best Epoch | train loss | Train accuracy | validation loss | Validatio accuracy |
+|--------------+------------+------------+----------------+-----------------+--------------------|
+|           31 |         30 |     0.7662 |          74.27 |          0.3742 |              91.09 |
+|           41 |         38 |     0.3910 |          86.55 |          0.2667 |              94.27 |
+|           51 |         48 |     0.1625 |          94.71 |          0.1642 |              96.00 |
+
+Obviously the small gains indicates that the model has reached its
+optimum around 35. This can be more clearly shown in the plot.
+[[file:ANN/training_history.png]]
+
+
+This is the graph with all 3 runs, and validation accuracy seems to be
+flatten out around 35.
+
+Taken the 3 training set (51 epochs) with the best validation accuracy
+of 96%, and running test data on it we received.
+
+score of:
+#+begin_example
+--- Inference Results ---
+  Total samples: 1000
+  Loss: 0.0477
+  Accuracy: 98.80%
+
+  Accuracy (torchmetrics): 98.80%
+#+end_example
+
+Which is quite impressive.
+[[file:ANN/per_class_metrics.png]]
+
+Though we can see a slight problem in some of the classes.
+For the CNN model there also a confusion matrix to see which of the
+classes are confused with the prediction.
+[[file:ANN/confusion_matrix.png]]
+
+Though the output is a bit squeezed due to the many different classes.
+
+As for conclusion, the CNN performed much better than the ANN. Though
+it tool longer and more resources were needed.
+
+** Discussion, Ethics and Future work
+As we seen from the data between CNN and ANN, there is a obvious lean
+towards using CNN when it comes to performance. On the otherhand this was a small project, and with
+regards how much resources needed to train the CNN we might consider
+the implication of energy. When regarding that big tech companies uses
+billions to build datacenters with an obvious huge demands for energy. This
+should be considered, maybe one can get away with a combination
+between ANN and CNN. Another ethical dilemma is the ease to use bias
+data; while COIL-100 is a controlled "toy" dataset , the demogaphic
+bias like faces, or underpresentation of certain groups/contexts
+aren't directly applicable, but should be considered in future work
+with AI.
+
+As for this project, a lot more testing different hyper-parameters
+could/should have been done. Since this was a learning experience
+there was some uncertainties during the development, as for example
+how the cnn model should be constructed, a lot of investigation was
+done to come up with this model, though maybe not optimal.
+There seems to be a lot of trial and error to find optimal ways of
+doing neural networks.
+
+The inital hypthesis was:
+#+begin_quote
+The hypothesis is that using CNN would take longer to train, but would
+gain better generalization and better prediction. Though it comes with
+the expense of loosing control of what is the features that would make
+the object.
+#+end_quote
+The CNN achieved 98.8% test accuracy compared to the ANN's 89%, a
+significant 9.8 percentage point improvement, validating the
+hypothesis that CNNs offer better prediction for image data.
+This clearly indicates that the CNN has a better inherent ability to
+capture spatial hierarchies, local features, abstractions.
+
+
+
+
+*** Self assesment
+In the programming phase, I took the opportunity to build piplines
+using functional programming, this because it made it more visually
+understandable in code what was actually happening another reason is
+that since one could change the execution easily to test different
+approaches, it also gives a better error handling than exception,
+though this is my opinion.
+
+
+I did not use Jupiter notebook, since I do already have a workflow
+which is well settled, even though Im more used to programming
+low-level with strongly compiled typed languages.
+
+
+
+
+*** Future work.
+As mentioned before more testing with hyper-parameters.
+Training models with other kinds of data , for example time series
+sensor data.
+
+* EuroSAT CNN
+:PROPERTIES:
+:ID:       5904e82f-3a61-4f15-836e-ac9f4cfa289e
+:END:
+The second project is called [[https://github.com/Carl2/DVA476/tree/main/project/CNN][CNN]] , and is located in the same
+repository in a different directory. This model is used to classify
+10 different images representing the EuroSAT map features.
+This solely use a configuration [[https://github.com/Carl2/DVA476/blob/main/project/CNN/config.json][file]] to set hyper-parameters and other
+settings.
+
+
+** Dividing the data
+Instead of dividing the data as with the [[id:b0a26750-b5fb-48e7-8b1c-a343f91c132e][Coil Split]], this uses the
+configuration as in json here is an example:
+#+begin_src json
+  "train": {
+    "AnnualCrop": {
+      "start": 1,
+      "end": 2100
+    },
+#+end_src
+
+A better description can be found in the [[https://github.com/Carl2/DVA476/blob/main/project/CNN/README.org][README]] file.
+here are the distribution of training data.
+
+| Class 0:       |  2100 | (11.1%) |   |
+| Class 1:       |  2100 | (11.1%) |   |
+| Class 2:       |  2100 | (11.1%) |   |
+| Class 3:       |  1750 | (9.3%)  |   |
+| Class 4:       |  1750 | (9.3%)  |   |
+| Class 5:       |  1400 | (7.4%)  |   |
+| Class 6:       |  1750 | (9.3%)  |   |
+| Class 7:       |  2100 | (11.1%) |   |
+| Class 8:       |  1750 | (9.3%)  |   |
+| Class 9:       |  2100 | (11.1%) |   |
+|----------------+-------+---------+---|
+| Total samples: | 18900 |         |   |
+Number of batches(size 32): 591 ≅ 18912 Images
+
+Distribution of validation data.
+
+| Class 0:       |  451 | (11.1%) |
+| Class 1:       |  451 | (11.1%) |
+| Class 2:       |  451 | (11.1%) |
+| Class 3:       |  376 | (9.3%)  |
+| Class 4:       |  376 | (9.3%)  |
+| Class 5:       |  301 | (7.4%)  |
+| Class 6:       |  376 | (9.3%)  |
+| Class 7:       |  451 | (11.1%) |
+| Class 8:       |  376 | (9.3%)  |
+| Class 9:       |  451 | (11.1%) |
+|----------------+------+---------|
+| Total samples: | 4060 |         |
+Number of batches(size 32): 127 ≅ 4064 Images
+
+
+** CNN network description
+
+The following picture shows the CNN used for /EuroSAT/ images.
+
+#+begin_src plantuml :file CNN.jpg
+!theme mars
+
+title Simplified CNN Architecture (PyTorch)
+
+skinparam component {
+  backgroundColor<<Input>> LightSkyBlue
+  backgroundColor<<Output>> LightGreen
+  backgroundColor<<Config>> LightCoral
+  backgroundColor<<Core>> LightGoldenRodYellow
+  backgroundColor<<Activation>> LightGrey
+}
+
+component "Input Image\n(batch, 3, 64, 64)" as Input <<Input>>
+
+package "Convolutional Block 1" {
+  component "Conv2d_1\n(3->32, k=3, p=1)" as Conv1 <<Core>>
+  component "BatchNorm2d_1\n(32)" as BN1 <<Core>>
+  component "ReLU_1\n(Activation)" as ReLU1 <<Activation>>
+  component "MaxPool2d_1\n(k=2, s=2)" as Pool1 <<Core>>
+}
+
+package "Convolutional Block 2" {
+  component "Conv2d_2\n(32->64, k=3, p=1)" as Conv2 <<Core>>
+  component "BatchNorm2d_2\n(64)" as BN2 <<Core>>
+  component "ReLU_2\n(Activation)" as ReLU2 <<Activation>>
+  component "Dropout2d_1\n(p=dropout_rate)" as Dropout1 <<Core>>
+  component "MaxPool2d_2\n(k=2, s=2)" as Pool2 <<Core>>
+}
+
+package "Fully Connected Layers" {
+  component "Flatten\n(Input x.size(0), -1)" as Flatten <<Core>>
+    component "Linear_1\n(16x16x64 -> 128)" as FC1 <<Core>>
+  component "ReLU_3\n(Activation)" as ReLU3 <<Activation>>
+  component "Dropout_2\n(p=dropout_rate)" as Dropout2 <<Core>>
+  component "Linear_2\n(128 -> num_classes)" as FC2 <<Core>>
+}
+
+component "Output Logits\n(batch, num_classes)" as Output <<Output>>
+
+
+' Connections showing data flow and shape changes
+Input --> Conv1 : (batch, 3, 64, 64)
+Conv1 --> BN1 : (batch, 32, 64, 64)
+BN1 --> ReLU1
+ReLU1 --> Pool1 : (batch, 32, 64, 64) -> (batch, 32, 32, 32)
+
+Pool1 --> Conv2 : (batch, 32, 32, 32)
+Conv2 --> BN2 : (batch, 64, 32, 32)
+BN2 --> ReLU2
+ReLU2 --> Dropout1
+Dropout1 --> Pool2 : (batch, 64, 32, 32) -> (batch, 64, 16, 16)
+
+Pool2 --> Flatten : (batch, 64, 16, 16) -> (batch, 16384)
+Flatten --> FC1 : (batch, 16384)
+FC1 --> ReLU3 : (batch, 128)
+ReLU3 --> Dropout2
+Dropout2 --> FC2 : (batch, 128)
+FC2 --> Output : (batch, num_classes)
+
+#+end_src
+
+#+RESULTS:
+[[file:CNN.jpg]]
+
+** Performance.
+The performacne of the CNN is remarkable, this training was done using
+51 epoch and reaches 89.33% at epoch 48, which is where it is saved as
+the best model.
+| Epoch | train loss | train accuracy | validation loss | validation accuracy |
+|-------+------------+----------------+-----------------+---------------------|
+|    46 |     0.5812 |          80.25 |          0.3633 |               89.01 |
+|    47 |     0.5850 |          80.31 |          0.3785 |               87.78 |
+|    48 |     0.5689 |          80.86 |          0.3507 |               89.33 |
+|    49 |     0.5696 |          80.58 |          0.3570 |               88.65 |
+|    50 |     0.5643 |          81.23 |          0.3739 |               88.28 |
+|    51 |     0.5563 |          81.25 |          0.3641 |               88.05 |
+
+
+[[file:CNN/training_history.png]]
+
+As can see from the graphs; this tends to be where the graphs
+flattens out, and might be overfitting for the last epochs [49,51].
+
+This clearly shows that the Percission and Recall is high, and that is
+reflected in the F1 bar chart.
+
+[[file:CNN/per_class_metrics.png]]
+
+There is however a slight problem with the /PermanentCrop/ class in
+recall. To further investigate a confusion matrix can be used.
+
+[[file:CNN/confusion_matrix.png]]
+
+The confusion matrix shows the actual image and the prediction of what
+the model think it was. We note that most of the actual images are
+reliable, but there are error cases for example /PermanentCrop/ and
+/HerbaceusVegatation/, one reason for this could be that they are very
+similar. The same reason is probably between /highway/ and /river/,
+they are similair in structures.
